@@ -86,7 +86,77 @@ const initialPackages: Package[] = [
   }
 ];
 
-const initialGallerySongs: GallerySong[] = [];
+const initialGallerySongs: GallerySong[] = [
+  {
+    id: "gal_1782926068317",
+    title: "MON KIDNAPPER JONATHAN ",
+    startTime: 0,
+    createdAt: "2026-07-01T17:14:28.317Z",
+    clientFirstName: "NOËLLA ",
+    clientReaction: "",
+    audioUrl: "/audio/1783082684762-NO_LLA_kabala_.mp3",
+    mood: "Chaleureux",
+    description: "",
+    coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+    visibility: "Public anonymous",
+    language: "Lingala / français ",
+    style: "Zouk",
+    occasion: "Anniversaire",
+    endTime: 300
+  },
+  {
+    id: "gal_1782926272236",
+    title: "COMBAT MORTEL EMMANUEL ",
+    startTime: 0,
+    audioUrl: "/audio/1783082641409-IZA..mp3",
+    clientReaction: "",
+    clientFirstName: "IZABELLE ",
+    createdAt: "2026-07-01T17:17:52.236Z",
+    mood: "Chaleureux",
+    description: "",
+    coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+    visibility: "Public with first name",
+    language: "Swahili / français ",
+    occasion: "Mariage",
+    style: "Rumba congolaise",
+    endTime: 300
+  },
+  {
+    id: "gal_1782926491514",
+    mood: "Chaleureux",
+    description: "",
+    startTime: 0,
+    title: "ARDEN WANGU ",
+    createdAt: "2026-07-01T17:21:31.514Z",
+    clientFirstName: "ARDEN ",
+    clientReaction: "",
+    audioUrl: "/audio/1783082545661-ARDANT_.mp3",
+    style: "Rumba congolaise",
+    occasion: "Anniversaire",
+    endTime: 300,
+    coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+    language: "Swahili / français ",
+    visibility: "Public with first name"
+  },
+  {
+    id: "gal_1783329300468",
+    visibility: "Public with first name",
+    language: "Français ",
+    coverUrl: "/images/1783329105667-80e71f71-35ca-4c27-a1c0-4ec31ca0c188-1_all_5872.jpg",
+    endTime: 280,
+    style: "Zouk",
+    occasion: "Anniversaire",
+    clientFirstName: "NOËLLA kabala ",
+    createdAt: "2026-07-06T09:15:00.468Z",
+    memorySlug: "Mon fiancé unique ",
+    audioUrl: "/audio/1783329292940-NO_LLA_kabala_.mp3",
+    clientReaction: "",
+    title: "NOËLLA ",
+    startTime: 0,
+    description: "",
+    mood: "Chaleureux"
+  }
+];
 
 const initialReviews: ClientReview[] = [
   {
@@ -98,7 +168,7 @@ const initialReviews: ClientReview[] = [
     screenshotUrl: '',
     audioTestimonialUrl: '',
     date: '2026-06-29',
-    approved: false
+    approved: true
   },
   {
     id: 'rev_1',
@@ -230,14 +300,28 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // ----------------------------------------------------
+// 2.5 Load Local fallback JSON database (voxmory_db.json)
+// ----------------------------------------------------
+const localDbPath = path.join(process.cwd(), 'voxmory_db.json');
+let localDbData: any = null;
+if (fs.existsSync(localDbPath)) {
+  try {
+    localDbData = JSON.parse(fs.readFileSync(localDbPath, 'utf-8'));
+    console.log('[LocalDB] Loaded local fallback voxmory_db.json successfully.');
+  } catch (err) {
+    console.error('[LocalDB] Warning: Could not parse voxmory_db.json:', err);
+  }
+}
+
+// ----------------------------------------------------
 // 3. Synchronous Cache & Memory State
 // ----------------------------------------------------
 const cache: DatabaseSchema = {
-  packages: [...initialPackages],
-  orders: [],
-  gallerySongs: [...initialGallerySongs],
-  reviews: [...initialReviews],
-  memoryPages: [...initialMemoryPages],
+  packages: localDbData?.packages ? [...localDbData.packages] : [...initialPackages],
+  orders: localDbData?.orders ? [...localDbData.orders] : [],
+  gallerySongs: localDbData?.gallerySongs ? [...localDbData.gallerySongs] : [...initialGallerySongs],
+  reviews: localDbData?.reviews ? [...localDbData.reviews] : [...initialReviews],
+  memoryPages: localDbData?.memoryPages ? [...localDbData.memoryPages] : [...initialMemoryPages],
   reminders: [],
   adminPasswordHash: 'voxmory2026',
   visitsCount: 1345,
