@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to validate document IDs
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Explicit collections required for VOXMORY Studio
+    match /packages/{packageId} {
+      allow read, write: if isValidId(packageId);
+    }
+    
+    match /orders/{orderId} {
+      allow read, write: if isValidId(orderId);
+    }
+    
+    match /gallerySongs/{songId} {
+      allow read, write: if isValidId(songId);
+    }
+    
+    match /reviews/{reviewId} {
+      allow read, write: if isValidId(reviewId);
+    }
+    
+    match /memoryPages/{pageId} {
+      allow read, write: if isValidId(pageId);
+    }
+    
+    match /reminders/{reminderId} {
+      allow read, write: if isValidId(reminderId);
+    }
+    
+    match /broadcastLists/{listId} {
+      allow read, write: if isValidId(listId);
+    }
+    
+    match /broadcastCampaigns/{campaignId} {
+      allow read, write: if isValidId(campaignId);
+    }
+    
+    match /dailyStats/{statId} {
+      allow read, write: if isValidId(statId);
+    }
+    
+    match /meta/{docId} {
+      allow read, write: if isValidId(docId);
+    }
+  }
+}

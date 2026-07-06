@@ -1,0 +1,195 @@
+{
+  "entities": {
+    "Package": {
+      "title": "Package",
+      "description": "A custom song package configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "promise": { "type": "string" },
+        "includes": { "type": "array" },
+        "price": { "type": "string" },
+        "deliveryTime": { "type": "string" }
+      },
+      "required": ["id", "name", "promise", "includes", "price", "deliveryTime"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "An order submitted by a client",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "whatsApp": { "type": "string" },
+        "email": { "type": "string" },
+        "occasion": { "type": "string" },
+        "story": { "type": "string" },
+        "musicalStyle": { "type": "string" },
+        "tempoMood": { "type": "string" },
+        "language": { "type": "string" },
+        "audioFileUrl": { "type": "string" },
+        "paymentScreenshotUrl": { "type": "string" },
+        "packageId": { "type": "string" },
+        "packageName": { "type": "string" },
+        "packagePrice": { "type": "string" },
+        "status": { "type": "string" },
+        "paymentStatus": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "memoryPageId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "clientName", "whatsApp", "packageId", "status", "createdAt"]
+    },
+    "GallerySong": {
+      "title": "GallerySong",
+      "description": "A featured song in the showcase gallery",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "occasion": { "type": "string" },
+        "style": { "type": "string" },
+        "language": { "type": "string" },
+        "mood": { "type": "string" },
+        "description": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "clientReaction": { "type": "string" },
+        "visibility": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "occasion", "style", "audioUrl", "visibility", "createdAt"]
+    },
+    "ClientReview": {
+      "title": "ClientReview",
+      "description": "A client review or testimonial",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "rating": { "type": "integer" },
+        "clientName": { "type": "string" },
+        "occasion": { "type": "string" },
+        "comment": { "type": "string" },
+        "screenshotUrl": { "type": "string" },
+        "audioTestimonialUrl": { "type": "string" },
+        "date": { "type": "string" },
+        "approved": { "type": "boolean" }
+      },
+      "required": ["id", "rating", "clientName", "comment", "date", "approved"]
+    },
+    "MemoryPage": {
+      "title": "MemoryPage",
+      "description": "A dedicated souvenir web page for a song",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderId": { "type": "string" },
+        "eventTitle": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "recipientPhotoUrl": { "type": "string" },
+        "personalMessage": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "orderId", "eventTitle", "recipientName", "audioUrl", "createdAt"]
+    },
+    "EventReminder": {
+      "title": "EventReminder",
+      "description": "An automated or scheduled event reminder",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "whatsApp": { "type": "string" },
+        "eventName": { "type": "string" },
+        "eventDate": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "clientName", "whatsApp", "eventName", "eventDate", "createdAt"]
+    },
+    "DailyStat": {
+      "title": "DailyStat",
+      "description": "Daily aggregated counts for analytics",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "visits": { "type": "integer" },
+        "listens": { "type": "integer" },
+        "orders": { "type": "integer" }
+      },
+      "required": ["date", "visits", "listens", "orders"]
+    },
+    "BroadcastList": {
+      "title": "BroadcastList",
+      "description": "A contact group for WhatsApp broadcasts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "contacts": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "contacts", "createdAt"]
+    },
+    "BroadcastCampaign": {
+      "title": "BroadcastCampaign",
+      "description": "A campaign message broadcast to contacts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "messageTemplate": { "type": "string" },
+        "targetListId": { "type": "string" },
+        "targetListName": { "type": "string" },
+        "status": { "type": "string" },
+        "sentCount": { "type": "integer" },
+        "totalCount": { "type": "integer" },
+        "sentAt": { "type": "string" },
+        "logs": { "type": "array" }
+      },
+      "required": ["id", "title", "messageTemplate", "targetListId", "status"]
+    }
+  },
+  "firestore": {
+    "/packages/{packageId}": {
+      "schema": "Package",
+      "description": "Custom song package configurations"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "All customer orders and status tracking"
+    },
+    "/gallerySongs/{songId}": {
+      "schema": "GallerySong",
+      "description": "Featured showcase songs in the gallery"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "ClientReview",
+      "description": "Client reviews, approved by the administrator"
+    },
+    "/memoryPages/{pageId}": {
+      "schema": "MemoryPage",
+      "description": "Durable private souvenir pages with QR access"
+    },
+    "/reminders/{reminderId}": {
+      "schema": "EventReminder",
+      "description": "Event reminders logged by users"
+    },
+    "/dailyStats/{statDate}": {
+      "schema": "DailyStat",
+      "description": "Aggregated daily stats for the dashboard"
+    },
+    "/broadcastLists/{listId}": {
+      "schema": "BroadcastList",
+      "description": "WhatsApp contact segments and lists"
+    },
+    "/broadcastCampaigns/{campaignId}": {
+      "schema": "BroadcastCampaign",
+      "description": "Campaigns executed for WhatsApp delivery"
+    }
+  }
+}
