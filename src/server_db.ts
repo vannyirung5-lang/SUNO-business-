@@ -205,8 +205,14 @@ const initialBroadcastCampaigns: BroadcastCampaign[] = [
 // 2. Firebase SDK Initialization & Database Setup
 // ----------------------------------------------------
 let firebaseConfig: any = {
-  projectId: 'spry-pipe-472900-p0',
-  firestoreDatabaseId: 'ai-studio-voxmory-7a0a9388-1be7-4232-8d6a-d8cf7ba66449'
+  projectId: "spry-pipe-472900-p0",
+  appId: "1:917415537827:web:ba1218cdd82679e6786316",
+  apiKey: "AIzaSyAol9CBuiC0wx8e-0xqhDG06lhc0DnsNAE",
+  authDomain: "spry-pipe-472900-p0.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-voxmory-7a0a9388-1be7-4232-8d6a-d8cf7ba66449",
+  storageBucket: "spry-pipe-472900-p0.firebasestorage.app",
+  messagingSenderId: "917415537827",
+  measurementId: ""
 };
 
 const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
