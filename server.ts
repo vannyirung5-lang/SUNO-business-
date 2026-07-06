@@ -140,6 +140,8 @@ app.get('/uploads/:filename', async (req, res, next) => {
 });
 
 app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(path.join(process.cwd(), 'public/audio')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'public/images')));
 
 // Increase payload limit for audio/image uploads
 app.use(express.json({ limit: '50mb' }));

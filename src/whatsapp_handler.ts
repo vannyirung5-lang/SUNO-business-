@@ -30,6 +30,18 @@ export async function sendWhatsAppMessage(phone: string, message: string): Promi
       return false;
     }
 
+    // Instantly abort and return false if the credentials are the unconfigured default placeholders
+    const isPlaceholder = 
+      apiURL.includes("MON-DOMAINE-OPENWA") || 
+      apiKey.includes("MA_CLE_API") || 
+      sessionId.includes("MA_SESSION") ||
+      adminPhone.includes("ADMIN_WHATSAPP_NUMBER");
+
+    if (isPlaceholder) {
+      console.warn("[WhatsApp OpenWA] Warning: Skipping WhatsApp send because credentials contain placeholder values from .env.example.");
+      return false;
+    }
+
     if (!phone || !message) {
       console.warn("[WhatsApp OpenWA] Warning: Phone number or message content is empty.");
       return false;
@@ -44,6 +56,9 @@ export async function sendWhatsAppMessage(phone: string, message: string): Promi
     const endpoint = `${apiURL}/sessions/${sessionId}/messages/send-text`;
     console.log(`[WhatsApp OpenWA] Sending notification securely to ${cleanPhone}...`);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -53,8 +68,11 @@ export async function sendWhatsAppMessage(phone: string, message: string): Promi
       body: JSON.stringify({
         chatId: cleanPhone,
         text: message
-      })
+      }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
