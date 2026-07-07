@@ -215,7 +215,12 @@ const initialMemoryPages: MemoryPage[] = [
     personalMessage: 'À l\'amour de ma vie. Que cette rumba congolaise scelle notre promesse d\'éternité devant Dieu et nos familles.',
     audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    songTitle: 'Amour Éternel',
+    senderName: 'Gilles',
+    occasion: 'Mariage',
+    photoUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+    lyrics: 'Chimène, mon ange, ma promesse jurée\nGilles à tes côtés pour l\'éternité\nQue cette rumba congolaise scelle notre promesse\nSous le regard bienveillant de nos familles.'
   }
 ];
 
@@ -463,6 +468,15 @@ async function syncDatabase() {
 
 // Fire background sync instantly on boot
 const syncPromise = syncDatabase();
+
+// Re-sync database cache from Firestore every 15 seconds to ensure multi-instance and direct Firestore edits are synced automatically
+setInterval(async () => {
+  try {
+    await syncDatabase();
+  } catch (err) {
+    console.error('[Firestore] Periodic background sync failed:', err);
+  }
+}, 15000);
 
 // ----------------------------------------------------
 // 4. Background Persistence Helpers (Non-blocking Writes)

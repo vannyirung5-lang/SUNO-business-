@@ -36,7 +36,7 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
   }, [slug]);
 
   const getShareText = () => {
-    return `❤️ Écoute cette chanson personnalisée magnifique « ${pageData?.songTitle} », créée spécialement pour ${pageData?.recipientName} ! Découvre les paroles et la dédicace ici : ${window.location.origin}/#memory/${slug}`;
+    return `❤️ Écoute cette chanson personnalisée magnifique « ${pageData?.songTitle || pageData?.eventTitle || 'Chanson'} », créée spécialement pour ${pageData?.recipientName} ! Découvre les paroles et la dédicace ici : ${window.location.origin}/#memory/${slug}`;
   };
 
   const shareWhatsApp = () => {
@@ -94,6 +94,8 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
     );
   }
 
+  const effectivePhotoUrl = pageData.photoUrl || pageData.recipientPhotoUrl || pageData.coverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80";
+
   return (
     <div className="min-h-[90vh] py-16 bg-[#030304] text-white relative overflow-hidden">
       
@@ -117,7 +119,7 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
             </span>
           </h1>
           <p className="text-pink-400 font-medium text-sm tracking-wide">
-            Offerte par {pageData.senderName} • À l'occasion de : {pageData.occasion}
+            Offerte par {pageData.senderName || 'un proche'} • À l'occasion de : {pageData.occasion || 'Souvenir'}
           </p>
         </div>
 
@@ -125,7 +127,7 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
         <div className="relative max-w-md mx-auto aspect-[4/3] rounded-3xl overflow-hidden p-[1px] bg-gradient-to-b from-purple-500/30 to-yellow-500/20 shadow-2xl">
           <div className="w-full h-full rounded-3xl bg-black relative overflow-hidden">
             <img
-              src={pageData.photoUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80"}
+              src={effectivePhotoUrl}
               alt={pageData.recipientName}
               className="w-full h-full object-cover opacity-80"
               referrerPolicy="no-referrer"
@@ -133,7 +135,7 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
             {/* Audio Wave layout overlays */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black to-transparent p-6 pt-24 z-10">
               <span className="text-[10px] uppercase font-mono text-gray-400 tracking-widest block mb-1">Mélodie Émotionnelle</span>
-              <h3 className="font-sans font-bold text-lg text-white">« {pageData.songTitle} »</h3>
+              <h3 className="font-sans font-bold text-lg text-white">« {pageData.songTitle || pageData.eventTitle || 'Chanson Souvenir'} »</h3>
             </div>
           </div>
         </div>
@@ -142,9 +144,9 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
         <div className="max-w-2xl mx-auto space-y-6">
           <AudioPlayer
             audioUrl={pageData.audioUrl}
-            title={pageData.songTitle}
-            subtitle={`Lien Souvenir • ${pageData.occasion}`}
-            coverUrl={pageData.photoUrl}
+            title={pageData.songTitle || pageData.eventTitle || 'Chanson Souvenir'}
+            subtitle={`Lien Souvenir • ${pageData.occasion || 'Cadeau'}`}
+            coverUrl={effectivePhotoUrl}
           />
           
           {/* Social Sharing Component */}
@@ -256,10 +258,10 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
               </p>
               <div className="flex items-center gap-3 pt-4 border-t border-white/5">
                 <div className="w-10 h-10 rounded-full bg-pink-950 flex items-center justify-center border border-pink-500/20 text-pink-400 text-sm font-bold">
-                  {pageData.senderName[0]}
+                  {(pageData.senderName || "Un proche")[0]}
                 </div>
                 <div>
-                  <span className="block font-bold text-white text-sm">{pageData.senderName}</span>
+                  <span className="block font-bold text-white text-sm">{pageData.senderName || "Un proche"}</span>
                   <span className="block text-[10px] text-gray-500 font-mono">Dédicataire de l'œuvre</span>
                 </div>
               </div>

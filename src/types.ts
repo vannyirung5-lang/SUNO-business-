@@ -72,6 +72,10 @@ export interface Order {
   finalAudioUrl?: string;
   coverImageUrl?: string;
   memoryPageId?: string; // UUID of generated private memory page
+  songTitle?: string;
+  clientFirstName?: string;
+  clientName?: string;
+  finalLyrics?: string;
 }
 
 export interface GallerySong {
@@ -115,6 +119,11 @@ export interface MemoryPage {
   audioUrl: string;
   coverUrl: string;
   createdAt: string;
+  songTitle?: string;
+  senderName?: string;
+  occasion?: string;
+  lyrics?: string;
+  photoUrl?: string;
 }
 
 export interface EventReminder {

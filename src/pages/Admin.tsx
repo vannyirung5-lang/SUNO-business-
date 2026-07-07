@@ -94,6 +94,8 @@ export default function Admin({ onNavigate }: AdminProps) {
   const [hasNewOrderIndicator, setHasNewOrderIndicator] = useState(false);
   const [isUploadingFinalAudio, setIsUploadingFinalAudio] = useState(false);
   const [uploadFinalAudioError, setUploadFinalAudioError] = useState('');
+  const [isUploadingFinalPhoto, setIsUploadingFinalPhoto] = useState(false);
+  const [uploadFinalPhotoError, setUploadFinalPhotoError] = useState('');
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteListId, setConfirmDeleteListId] = useState<string | null>(null);
@@ -741,7 +743,82 @@ export default function Admin({ onNavigate }: AdminProps) {
     }
   };
 
-  // Update order status/notes/files
+  const handleUploadFinalPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedOrder) return;
+
+    // Formats d'image acceptés : PNG, JPEG, JPG, WEBP, GIF
+    const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    const allowed = ['.png', '.jpeg', '.jpg', '.webp', '.gif'];
+    if (!allowed.includes(extension)) {
+      setUploadFinalPhotoError('Formats d\'image acceptés uniquement : PNG, JPEG, JPG, WEBP, GIF.');
+      return;
+    }
+    setUploadFinalPhotoError('');
+    setIsUploadingFinalPhoto(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        try {
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileName: file.name,
+              fileType: file.type,
+              base64Data: base64
+            })
+          });
+
+          if (!uploadRes.ok) {
+            throw new Error('Échec du téléversement de la photo de couverture.');
+          }
+
+          const uploadData = await uploadRes.json();
+          const uploadedUrl = uploadData.url;
+
+          // Update local state
+          setFinalPhotoInput(uploadedUrl);
+
+          // Update database synchronously
+          const updatedOrder = {
+            ...selectedOrder,
+            coverImageUrl: uploadedUrl
+          };
+
+          const updateRes = await fetch(`/api/orders/${selectedOrder.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedOrder)
+          });
+
+          if (updateRes.ok) {
+            setSelectedOrder(updatedOrder);
+            alert('Photo de couverture téléversée et associée à la commande avec succès !');
+            fetchDashboardData(false);
+          } else {
+            throw new Error('Échec de l\'association de la photo de couverture à la commande.');
+          }
+        } catch (err: any) {
+          console.error(err);
+          setUploadFinalPhotoError('Erreur de téléversement : ' + err.message);
+        } finally {
+          setIsUploadingFinalPhoto(false);
+        }
+      };
+      reader.onerror = () => {
+        setUploadFinalPhotoError('Erreur de lecture du fichier image.');
+        setIsUploadingFinalPhoto(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error(err);
+      setUploadFinalPhotoError('Une erreur inattendue est survenue.');
+      setIsUploadingFinalPhoto(false);
+    }
+  };
   const handleUpdateOrder = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedOrder) return;
@@ -1468,17 +1545,40 @@ export default function Admin({ onNavigate }: AdminProps) {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1">
-                          <ImageIcon className="w-3.5 h-3.5 text-pink-400" />
-                          <span>Photo de couverture (URL)</span>
+                        <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+                          <span className="flex items-center gap-1">
+                            <ImageIcon className="w-3.5 h-3.5 text-pink-400" />
+                            <span>Photo de couverture (URL)</span>
+                          </span>
+                          <span className="text-[9px] text-gray-500 font-mono font-normal">Saisir URL ou téléverser</span>
                         </label>
-                        <input
-                          type="text"
-                          placeholder="Ex: https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4"
-                          value={finalPhotoInput}
-                          onChange={(e) => setFinalPhotoInput(e.target.value)}
-                          className="w-full bg-black border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-mono"
-                        />
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Ex: https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4"
+                            value={finalPhotoInput}
+                            onChange={(e) => setFinalPhotoInput(e.target.value)}
+                            className="flex-grow bg-black border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-mono"
+                          />
+                          <label className="flex-shrink-0 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2.5 rounded-xl text-xs font-bold font-sans cursor-pointer flex items-center justify-center gap-1.5 hover:scale-[1.02] transition-all">
+                            {isUploadingFinalPhoto ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="w-3.5 h-3.5" />
+                            )}
+                            <span>{isUploadingFinalPhoto ? 'Envoi...' : 'Téléverser'}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleUploadFinalPhoto}
+                              disabled={isUploadingFinalPhoto}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                        {uploadFinalPhotoError && (
+                          <span className="block text-[10px] text-red-500 font-semibold mt-1">{uploadFinalPhotoError}</span>
+                        )}
                       </div>
 
                     </div>

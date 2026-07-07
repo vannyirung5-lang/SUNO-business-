@@ -519,7 +519,12 @@ app.post('/api/memory-pages/generate', (req, res) => {
     personalMessage: order.storyText || `Une magnifique chanson personnalisée créée spécialement avec amour pour célébrer ce moment inoubliable.`,
     audioUrl: order.finalAudioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     coverUrl: order.coverImageUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    songTitle: order.songTitle || 'Chanson Personnalisée',
+    senderName: order.clientFirstName || order.clientName || 'Un proche',
+    occasion: order.occasion || 'Souvenir',
+    photoUrl: order.uploadedPhotoUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+    lyrics: order.finalLyrics || 'Paroles de la chanson personnalisée en cours...'
   });
 
   // Update order with the memoryPageId
