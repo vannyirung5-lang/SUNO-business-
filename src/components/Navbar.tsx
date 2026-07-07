@@ -20,7 +20,6 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
     { id: 'reviews', label: t('reviews', 'nav') },
     { id: 'pricing', label: t('pricing', 'nav') },
     { id: 'tracking', label: t('tracking', 'nav') },
-    { id: 'install', label: 'Installer App' },
   ];
 
   const handleNav = (page: string) => {

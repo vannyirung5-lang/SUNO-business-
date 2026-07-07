@@ -588,8 +588,17 @@ app.get('/api/stats', (req, res) => {
 
   // Calculate real metrics expected by frontend (totalOrders, delivered, pendingPayment)
   const totalOrders = orders.length;
-  const delivered = orders.filter(o => o.status === 'Livrée').length;
-  const pendingPayment = orders.filter(o => o.status === 'En attente de paiement' || o.paymentStatus !== 'Paid').length;
+  const delivered = orders.filter(o => {
+    const s = o.status as string;
+    return s === 'Livrée' || s === 'delivered';
+  }).length;
+  const pendingPayment = orders.filter(o => {
+    const s = o.status as string;
+    // Exclude delivered, cancelled or archived orders from pending payment counts to keep them compatible
+    const isFinished = s === 'Livrée' || s === 'delivered' || s === 'Annulée' || s === 'Archivée';
+    if (isFinished) return false;
+    return s === 'En attente de paiement' || s === 'pending_payment' || o.paymentStatus !== 'Paid';
+  }).length;
 
   // Calculate real revenue from paid orders
   let totalRevenue = 0;

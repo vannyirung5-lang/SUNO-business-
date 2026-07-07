@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { Lock, Sparkles, Sliders, MessageSquare, Calendar, RefreshCw, Check, Trash2, Cpu, FileText, Music, Image as ImageIcon, Send, Clock, Play, MessageCircle, TrendingUp, Users, Radio, Mic, X, Pencil, Heart, Share2, ExternalLink, Upload } from 'lucide-react';
-import { Order, ClientReview, EventReminder, OrderStatus, GallerySong, BroadcastList, BroadcastCampaign, BroadcastContact, DailyStat } from '../types.js';
+import { Order, ClientReview, EventReminder, OrderStatus, PaymentStatus, GallerySong, BroadcastList, BroadcastCampaign, BroadcastContact, DailyStat } from '../types.js';
 
 interface AdminProps {
   onNavigate: (page: string, params?: any) => void;
@@ -42,6 +42,7 @@ export default function Admin({ onNavigate }: AdminProps) {
 
   // Form states for manual updates
   const [statusInput, setStatusInput] = useState<OrderStatus>('received');
+  const [paymentStatusInput, setPaymentStatusInput] = useState<PaymentStatus>('Unpaid');
   const [notesInput, setNotesInput] = useState('');
   const [finalAudioInput, setFinalAudioInput] = useState('');
   const [finalPhotoInput, setFinalPhotoInput] = useState('');
@@ -660,6 +661,7 @@ export default function Admin({ onNavigate }: AdminProps) {
   const handleSelectOrder = (order: Order) => {
     setSelectedOrder(order);
     setStatusInput(order.status);
+    setPaymentStatusInput(order.paymentStatus || 'Unpaid');
     setNotesInput(order.adminNotes || '');
     setFinalAudioInput(order.finalAudioUrl || '');
     setFinalPhotoInput(order.coverImageUrl || '');
@@ -828,7 +830,8 @@ export default function Admin({ onNavigate }: AdminProps) {
         status: statusInput,
         adminNotes: notesInput,
         finalAudioUrl: finalAudioInput,
-        coverImageUrl: finalPhotoInput
+        coverImageUrl: finalPhotoInput,
+        paymentStatus: paymentStatusInput
       };
 
       const response = await fetch(`/api/orders/${selectedOrder.id}`, {
@@ -851,7 +854,8 @@ export default function Admin({ onNavigate }: AdminProps) {
   // Generate private memory page trigger
   const handleGenerateMemoryPage = async () => {
     if (!selectedOrder) return;
-    if (selectedOrder.status !== 'delivered' && statusInput !== 'delivered') {
+    const isDelivered = selectedOrder.status === 'delivered' || selectedOrder.status === 'Livrée' || statusInput === 'delivered' || statusInput === 'Livrée';
+    if (!isDelivered) {
       alert("Veuillez d'abord changer le statut de la commande à 'Chanson livrée' !");
       return;
     }
@@ -1314,15 +1318,43 @@ export default function Admin({ onNavigate }: AdminProps) {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-yellow-400">{o.id}</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                      o.status === 'delivered' 
-                        ? 'bg-green-950/50 text-green-400' 
-                        : o.status === 'pending_payment' 
-                          ? 'bg-red-950/50 text-pink-400' 
-                          : 'bg-yellow-950/50 text-yellow-400'
-                    }`}>
-                      {o.status}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {/* Payment status badge */}
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                        o.paymentStatus === 'Paid'
+                          ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/10'
+                          : 'bg-rose-950/60 text-rose-400 border border-rose-500/10'
+                      }`}>
+                        {o.paymentStatus === 'Paid' ? 'Payé' : 'Non Payé'}
+                      </span>
+                      {/* Production status badge */}
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                        o.status === 'delivered' || o.status === 'Livrée'
+                          ? 'bg-green-950/50 text-green-400 border border-green-500/10' 
+                          : o.status === 'pending_payment' || o.status === 'En attente de paiement' || o.status === "En attente d'acompte"
+                            ? 'bg-red-950/50 text-pink-400 border border-pink-500/10'
+                            : o.status === 'Annulée' || o.status === 'Archivée'
+                              ? 'bg-gray-900 text-gray-500 border border-white/5'
+                              : 'bg-yellow-950/50 text-yellow-400 border border-yellow-500/10'
+                      }`}>
+                        {(() => {
+                          const s = String(o.status || '').toLowerCase();
+                          if (s === 'delivered' || s === 'livrée') return 'Livrée';
+                          if (s === 'pending_payment' || s === 'en attente de paiement' || s === "en attente d'acompte") return "Attente Acompte";
+                          if (s === 'nouvelle') return 'Nouvelle';
+                          if (s === 'en cours') return 'En cours';
+                          if (s === 'terminée') return 'Terminée';
+                          if (s === 'annulée') return 'Annulée';
+                          if (s === 'received' || s === 'commande reçue') return 'Reçue';
+                          if (s === 'writing_lyrics' || s === 'écriture des paroles') return 'Écrit. Paroles';
+                          if (s === 'lyrics_validation' || s === 'validation des paroles') return 'Valid. Paroles';
+                          if (s === 'composing' || s === 'composition mélodique') return 'Comp. Mélodie';
+                          if (s === 'recording' || s === 'enregistrement studio') return 'Enreg. Studio';
+                          if (s === 'mixing' || s === 'mixage & mastering') return 'Mix & Master';
+                          return o.status;
+                        })()}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="space-y-0.5">
@@ -1467,7 +1499,7 @@ export default function Admin({ onNavigate }: AdminProps) {
                   {/* Update Order status/notes Form */}
                   <form onSubmit={handleUpdateOrder} className="space-y-4 pt-4 border-t border-white/5">
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       
                       <div className="space-y-1.5">
                         <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400">Statut de la production</label>
@@ -1490,6 +1522,36 @@ export default function Admin({ onNavigate }: AdminProps) {
                           <option value="mixing">Mixage &amp; Mastering</option>
                           <option value="delivered">Chanson livrée</option>
                         </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400">Statut du Paiement</label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPaymentStatusInput('Paid')}
+                            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer border ${
+                              paymentStatusInput === 'Paid'
+                                ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-lg shadow-emerald-950/20'
+                                : 'bg-black border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            <span>Payé</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentStatusInput('Unpaid')}
+                            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer border ${
+                              paymentStatusInput !== 'Paid'
+                                ? 'bg-rose-500/15 border-rose-500 text-rose-400 shadow-lg shadow-rose-950/20'
+                                : 'bg-black border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                            <span>Non Payé</span>
+                          </button>
+                        </div>
                       </div>
 
                       <div className="space-y-1.5">
