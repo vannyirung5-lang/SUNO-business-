@@ -13,9 +13,11 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setPhotoError(false);
     // Fetch details
     fetch(`/api/memory-pages/${slug}`)
       .then(res => {
@@ -127,10 +129,10 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
         <div className="relative max-w-md mx-auto aspect-[4/3] rounded-3xl overflow-hidden p-[1px] bg-gradient-to-b from-purple-500/30 to-yellow-500/20 shadow-2xl">
           <div className="w-full h-full rounded-3xl bg-black relative overflow-hidden">
             <img
-              src={effectivePhotoUrl}
+              src={photoError ? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80" : effectivePhotoUrl}
               alt={pageData.recipientName}
               className="w-full h-full object-cover opacity-80"
-              referrerPolicy="no-referrer"
+              onError={() => setPhotoError(true)}
             />
             {/* Audio Wave layout overlays */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black to-transparent p-6 pt-24 z-10">
@@ -146,7 +148,7 @@ export default function MemoryPageComp({ slug = 'maman-georgette', onNavigate }:
             audioUrl={pageData.audioUrl}
             title={pageData.songTitle || pageData.eventTitle || 'Chanson Souvenir'}
             subtitle={`Lien Souvenir • ${pageData.occasion || 'Cadeau'}`}
-            coverUrl={effectivePhotoUrl}
+            coverUrl={photoError ? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80" : effectivePhotoUrl}
           />
           
           {/* Social Sharing Component */}

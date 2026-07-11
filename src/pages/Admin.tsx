@@ -1,12 +1,14 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
-import { Lock, Sparkles, Sliders, MessageSquare, Calendar, RefreshCw, Check, Trash2, Cpu, FileText, Music, Image as ImageIcon, Send, Clock, Play, MessageCircle, TrendingUp, Users, Radio, Mic, X, Pencil, Heart, Share2, ExternalLink, Upload } from 'lucide-react';
-import { Order, ClientReview, EventReminder, OrderStatus, PaymentStatus, GallerySong, BroadcastList, BroadcastCampaign, BroadcastContact, DailyStat } from '../types.js';
+import { Lock, Sparkles, Sliders, MessageSquare, Calendar, RefreshCw, Check, Trash2, Cpu, FileText, Music, Image as ImageIcon, Send, Clock, Play, MessageCircle, TrendingUp, Users, Radio, Mic, X, Pencil, Heart, Share2, ExternalLink, Upload, Megaphone } from 'lucide-react';
+import { Order, ClientReview, EventReminder, OrderStatus, PaymentStatus, GallerySong, BroadcastList, BroadcastCampaign, BroadcastContact, DailyStat, PromotionSettings } from '../types.js';
 
 interface AdminProps {
   onNavigate: (page: string, params?: any) => void;
+  onPromotionChanged?: () => void;
+  onGalleryChanged?: () => void;
 }
 
-export default function Admin({ onNavigate }: AdminProps) {
+export default function Admin({ onNavigate, onPromotionChanged, onGalleryChanged }: AdminProps) {
   // Safe alert helper that won't crash in sandboxed iframes
   const alert = (msg: string) => {
     try {
@@ -27,7 +29,19 @@ export default function Admin({ onNavigate }: AdminProps) {
   const [gallerySongs, setGallerySongs] = useState<GallerySong[]>([]);
   const [stats, setStats] = useState<any>({ totalOrders: 0, pendingPayment: 0, delivered: 0, totalRevenue: 0, visitsCount: 0, listensCount: 0, dailyStats: [] });
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'orders' | 'gallery' | 'reviews' | 'reminders' | 'analytics' | 'broadcast'>('analytics');
+  const [activeTab, setActiveTab] = useState<'orders' | 'gallery' | 'reviews' | 'reminders' | 'analytics' | 'broadcast' | 'promotions'>('analytics');
+
+  // Promotion Settings States
+  const [promoText, setPromoText] = useState('');
+  const [promoIsActive, setPromoIsActive] = useState(false);
+  const [promoStyle, setPromoStyle] = useState<'marquee' | 'pulse' | 'gold-gradient' | 'classic'>('marquee');
+  const [promoLinkText, setPromoLinkText] = useState('');
+  const [promoLinkUrl, setPromoLinkUrl] = useState('');
+  const [isSavingPromo, setIsSavingPromo] = useState(false);
+
+  // New states for Featured Songs
+  const [newSongIsFeatured, setNewSongIsFeatured] = useState(false);
+  const [editIsFeatured, setEditIsFeatured] = useState(false);
   
   const [broadcastLists, setBroadcastLists] = useState<BroadcastList[]>([]);
   const [broadcastCampaigns, setBroadcastCampaigns] = useState<BroadcastCampaign[]>([]);
@@ -137,6 +151,7 @@ export default function Admin({ onNavigate }: AdminProps) {
     setEditVisibility(song.visibility || 'Public anonymous');
     setEditClientFirstName(song.clientFirstName || '');
     setEditMemorySlug(song.memorySlug || '');
+    setEditIsFeatured(!!song.isFeatured);
   };
 
   const handleSaveEdit = async (e: FormEvent) => {
@@ -162,7 +177,8 @@ export default function Admin({ onNavigate }: AdminProps) {
         clientFirstName: editClientFirstName,
         startTime: editStartTime ? parseFloat(editStartTime) : undefined,
         endTime: editEndTime ? parseFloat(editEndTime) : undefined,
-        memorySlug: editMemorySlug || undefined
+        memorySlug: editMemorySlug || undefined,
+        isFeatured: editIsFeatured
       };
 
       const response = await fetch(`/api/gallery/${editingSong.id}`, {
@@ -175,6 +191,7 @@ export default function Admin({ onNavigate }: AdminProps) {
         alert('Chanson de la galerie mise à jour avec succès !');
         setEditingSong(null);
         fetchDashboardData();
+        onGalleryChanged?.();
       } else {
         const errData = await response.json();
         alert(`Erreur : ${errData.error || 'Impossible de mettre à jour la chanson.'}`);
@@ -370,6 +387,17 @@ export default function Admin({ onNavigate }: AdminProps) {
       setGallerySongs(galData);
       setBroadcastLists(bListData);
       setBroadcastCampaigns(bCampData);
+
+      // Fetch promotion configurations
+      const promoRes = await fetch('/api/promotion');
+      if (promoRes.ok) {
+        const promoData = await promoRes.json();
+        setPromoText(promoData.text || '');
+        setPromoIsActive(!!promoData.isActive);
+        setPromoStyle(promoData.bannerStyle || 'marquee');
+        setPromoLinkText(promoData.linkText || '');
+        setPromoLinkUrl(promoData.linkUrl || '');
+      }
 
       if (bListData && bListData.length > 0) {
         setSelectedListId(prev => bListData.some((l: any) => l.id === prev) ? prev : bListData[0].id);
@@ -1043,7 +1071,8 @@ export default function Admin({ onNavigate }: AdminProps) {
         clientFirstName: newSongClientFirstName,
         startTime: newSongStartTime ? parseFloat(newSongStartTime) : undefined,
         endTime: newSongEndTime ? parseFloat(newSongEndTime) : undefined,
-        memorySlug: newSongMemorySlug || undefined
+        memorySlug: newSongMemorySlug || undefined,
+        isFeatured: newSongIsFeatured
       };
 
       const response = await fetch('/api/gallery', {
@@ -1064,8 +1093,10 @@ export default function Admin({ onNavigate }: AdminProps) {
         setNewSongStartTime('');
         setNewSongEndTime('');
         setNewSongMemorySlug('');
+        setNewSongIsFeatured(false);
         // Reload list
         fetchDashboardData();
+        onGalleryChanged?.();
       } else {
         const errData = await response.json();
         alert(`Erreur : ${errData.error || 'Impossible d’ajouter la chanson.'}`);
@@ -1091,6 +1122,38 @@ export default function Admin({ onNavigate }: AdminProps) {
     } catch (err) {
       console.error('Error deleting gallery song', err);
       alert('Une erreur est survenue lors de la suppression.');
+    }
+  };
+
+  const handleSavePromotion = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSavingPromo(true);
+    try {
+      const payload: PromotionSettings = {
+        text: promoText,
+        isActive: promoIsActive,
+        bannerStyle: promoStyle,
+        linkText: promoLinkText || undefined,
+        linkUrl: promoLinkUrl || undefined
+      };
+
+      const response = await fetch('/api/promotion', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert('Paramètres de promotion mis à jour avec succès !');
+        onPromotionChanged?.();
+      } else {
+        alert('Impossible de mettre à jour la promotion.');
+      }
+    } catch (err) {
+      console.error('Error saving promotion', err);
+      alert('Une erreur est survenue lors de la sauvegarde.');
+    } finally {
+      setIsSavingPromo(false);
     }
   };
 
@@ -1274,6 +1337,18 @@ export default function Admin({ onNavigate }: AdminProps) {
           >
             <Calendar className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
             <span className="truncate">Rappels ({reminders.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('promotions')}
+            className={`px-3 py-3 rounded-xl text-[10px] sm:text-xs font-sans font-bold transition-all flex items-center justify-center lg:justify-start gap-1.5 cursor-pointer w-full lg:w-auto ${
+              activeTab === 'promotions'
+                ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg border border-pink-500/20'
+                : 'bg-[#0e0e12] text-gray-400 hover:text-white hover:bg-[#13131a] border border-white/5'
+            }`}
+          >
+            <Megaphone className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+            <span className="truncate">Promotions</span>
           </button>
         </div>
 
@@ -2829,6 +2904,21 @@ export default function Admin({ onNavigate }: AdminProps) {
                   />
                 </div>
 
+                <div className="space-y-1 bg-yellow-400/5 p-3 rounded-xl border border-yellow-400/10">
+                  <label className="flex items-center gap-2 text-xs text-white cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={newSongIsFeatured}
+                      onChange={(e) => setNewSongIsFeatured(e.target.checked)}
+                      className="w-4 h-4 rounded text-yellow-500 focus:ring-yellow-500 bg-black border-white/20 accent-yellow-400 cursor-pointer"
+                    />
+                    <div>
+                      <span className="font-bold text-yellow-400">✨ Chanson Vedette</span>
+                      <span className="block text-[10px] text-gray-400">Afficher cette chanson en priorité dans la liste des chansons vedettes de la page d'accueil.</span>
+                    </div>
+                  </label>
+                </div>
+
                 <button
                   type="submit"
                   className="w-full py-3 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black font-sans font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer text-center"
@@ -2933,6 +3023,174 @@ export default function Admin({ onNavigate }: AdminProps) {
 
           </div>
         </div>
+        )}
+
+        {activeTab === 'promotions' && (
+          <div className="bg-[#0e0e12] border border-white/5 p-8 rounded-3xl space-y-6 mt-4">
+            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+              <div className="p-2.5 bg-yellow-400/10 text-yellow-400 rounded-xl">
+                <Megaphone className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-sans font-extrabold text-xl text-white">
+                  Gestion des Promotions &amp; Bandeau Annonce
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Configurez le bandeau publicitaire visible en haut de l'ensemble du site. Idéal pour annoncer un code de réduction (-15%, -20%), une offre flash, ou des fêtes de fin d'année.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              
+              {/* EDIT FORM (LEFT) */}
+              <div className="lg:col-span-7 space-y-4">
+                <h4 className="font-sans font-bold text-sm uppercase tracking-wider text-yellow-400 border-b border-white/5 pb-2">
+                  Paramètres de l'annonce active
+                </h4>
+
+                <form onSubmit={handleSavePromotion} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-gray-400 uppercase font-mono block">Statut du bandeau</label>
+                    <div className="flex items-center gap-4 bg-black border border-white/10 rounded-lg p-3">
+                      <label className="flex items-center gap-2 text-xs text-white cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={promoIsActive}
+                          onChange={(e) => setPromoIsActive(e.target.checked)}
+                          className="w-4 h-4 rounded text-yellow-500 focus:ring-yellow-500 bg-black border-white/20 accent-yellow-400 cursor-pointer"
+                        />
+                        <span>Activer et afficher le bandeau sur tout le site</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-gray-400 uppercase font-mono">Texte de l'annonce *</label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Ex: 🔥 OFFRE EXCEPTIONNELLE: -15% de réduction immédiate avec le code RUMBA15 !"
+                      value={promoText}
+                      onChange={(e) => setPromoText(e.target.value)}
+                      className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
+                    />
+                    <p className="text-[9px] text-gray-500 font-mono">Évitez les textes trop longs si le style n'est pas "Défilant".</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-gray-400 uppercase font-mono">Style Visuel &amp; Effets</label>
+                      <select
+                        value={promoStyle}
+                        onChange={(e: any) => setPromoStyle(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none cursor-pointer"
+                      >
+                        <option value="marquee">Défilant / Passant (Animé)</option>
+                        <option value="pulse">Pulse Rouge/Rose (Remarquable)</option>
+                        <option value="gold-gradient">Or Impérial Métallique (Luxe)</option>
+                        <option value="classic">Violet Profond Discret (Classique)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-gray-400 uppercase font-mono">Lien d'action (Optionnel)</label>
+                      <select
+                        value={promoLinkUrl}
+                        onChange={(e) => setPromoLinkUrl(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none cursor-pointer"
+                      >
+                        <option value="">Aucun bouton</option>
+                        <option value="#order">Lien vers Formulaire Commande</option>
+                        <option value="#pricing">Lien vers les Formules Tarifs</option>
+                        <option value="#gallery">Lien vers la Galerie d'Écoute</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {promoLinkUrl && (
+                    <div className="space-y-1 animate-in fade-in duration-200">
+                      <label className="text-[10px] text-gray-400 uppercase font-mono">Texte du bouton d'action *</label>
+                      <input
+                        type="text"
+                        required={!!promoLinkUrl}
+                        placeholder="Ex: Profiter de l'offre"
+                        value={promoLinkText}
+                        onChange={(e) => setPromoLinkText(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSavingPromo}
+                    className="w-full py-3 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black font-sans font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer text-center disabled:opacity-50"
+                  >
+                    {isSavingPromo ? 'Enregistrement...' : 'Enregistrer la Promotion'}
+                  </button>
+                </form>
+              </div>
+
+              {/* LIVE PREVIEW (RIGHT) */}
+              <div className="lg:col-span-5 space-y-4">
+                <h4 className="font-sans font-bold text-sm uppercase tracking-wider text-gray-400 border-b border-white/5 pb-2">
+                  Prévisualisation du bandeau
+                </h4>
+
+                <div className="bg-black/50 border border-white/5 p-6 rounded-2xl space-y-4">
+                  <p className="text-[10px] uppercase font-mono text-gray-400">Aperçu en temps réel :</p>
+                  
+                  {promoIsActive ? (
+                    <div className="border border-white/10 rounded-xl overflow-hidden bg-zinc-950">
+                      <div className={`py-2 px-3 flex items-center min-h-[40px] relative overflow-hidden ${
+                        promoStyle === 'marquee' ? 'bg-gradient-to-r from-purple-950 via-[#160621] to-purple-950' :
+                        promoStyle === 'pulse' ? 'bg-gradient-to-r from-red-600 via-pink-700 to-purple-800 animate-pulse animate-duration-1000' :
+                        promoStyle === 'gold-gradient' ? 'bg-gradient-to-r from-yellow-500 via-amber-600 to-yellow-600 text-black font-black' :
+                        'bg-purple-950'
+                      }`}>
+                        {promoStyle === 'marquee' ? (
+                          <div className="w-full flex items-center justify-between gap-3 text-xs">
+                            <span className="text-[9px] bg-black/60 text-yellow-400 font-mono font-bold px-1.5 py-0.5 rounded border border-yellow-500/20 flex-shrink-0">PROMO</span>
+                            <div className="flex-grow overflow-hidden relative min-h-[16px] flex items-center">
+                              <span className="text-xs text-white truncate">{promoText || "Aucun texte configuré"}</span>
+                            </div>
+                            {promoLinkText && (
+                              <span className="text-[9px] bg-black/40 text-yellow-400 border border-yellow-400/20 px-2 py-1 rounded-full flex-shrink-0 font-bold">
+                                {promoLinkText} →
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2 text-center text-xs">
+                            <span className={`font-bold ${promoStyle === 'gold-gradient' ? 'text-black' : 'text-white'}`}>{promoText || "Aucun texte configuré"}</span>
+                            {promoLinkText && (
+                              <span className={`text-[9px] px-2 py-1 rounded-full font-bold uppercase tracking-wider ${
+                                promoStyle === 'gold-gradient' ? 'bg-black text-yellow-400' : 'bg-yellow-400 text-black'
+                              }`}>
+                                {promoLinkText}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-black/10 text-gray-500 text-xs">
+                      Bandeau actuellement désactivé. Il n'apparaîtra pas sur le site public.
+                    </div>
+                  )}
+
+                  <div className="bg-yellow-400/5 border border-yellow-400/10 rounded-xl p-4 text-[11px] text-gray-400 leading-relaxed space-y-1">
+                    <span className="text-yellow-400 font-bold block">💡 Conseils de conversion :</span>
+                    <p>Un bon bandeau utilise le style <strong>Défilant / Passant</strong> pour ne pas encombrer visuellement le site tout en captant l'attention.</p>
+                    <p className="mt-1">Associez-le à un code promotionnel temporaire et un bouton redirigeant vers le <strong>Formulaire Commande</strong> pour maximiser vos ventes de rumba !</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
         )}
 
         {completedCampaign && (
@@ -3248,6 +3506,21 @@ export default function Admin({ onNavigate }: AdminProps) {
                     onChange={(e) => setEditMemorySlug(e.target.value)}
                     className="w-full bg-[#000000] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500 font-mono"
                   />
+                </div>
+
+                <div className="space-y-1 bg-yellow-400/5 p-3 rounded-xl border border-yellow-400/10">
+                  <label className="flex items-center gap-2 text-xs text-white cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editIsFeatured}
+                      onChange={(e) => setEditIsFeatured(e.target.checked)}
+                      className="w-4 h-4 rounded text-yellow-500 focus:ring-yellow-500 bg-black border-white/20 accent-yellow-400 cursor-pointer"
+                    />
+                    <div>
+                      <span className="font-bold text-yellow-400">✨ Chanson Vedette</span>
+                      <span className="block text-[10px] text-gray-400">Afficher cette chanson en priorité dans la liste des chansons vedettes de la page d'accueil.</span>
+                    </div>
+                  </label>
                 </div>
 
                 <div className="flex gap-4 pt-4 border-t border-white/5">

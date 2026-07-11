@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Music, MessageCircle, Mic, Gift, Flame, Sparkles, Heart, Star, Award, ChevronRight, ChevronLeft, GraduationCap, ShieldCheck, ThumbsUp, Users, RefreshCw, Check, Shield } from 'lucide-react';
+import { Music, MessageCircle, Mic, Gift, Flame, Sparkles, Heart, Star, Award, ChevronRight, ChevronLeft, GraduationCap, ShieldCheck, ThumbsUp, Users, RefreshCw, Check, Shield, Baby, HeartHandshake, Sun } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import AudioPlayer from '../components/AudioPlayer.js';
 import { Package, GallerySong, ClientReview } from '../types.js';
 import { useLanguage } from '../context/LanguageContext.js';
@@ -32,6 +33,7 @@ interface HomeProps {
 
 export default function Home({ packages, featuredSongs, featuredReviews, onNavigate }: HomeProps) {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  const [imageError, setImageError] = useState(false);
   const { language, t } = useLanguage();
   
   const categories = [
@@ -40,49 +42,71 @@ export default function Home({ packages, featuredSongs, featuredReviews, onNavig
       name: language === 'fr' ? 'Anniversaire' : language === 'sw' ? 'Kumbukumbu ya Kuzaliwa' : 'Birthday', 
       icon: Sparkles, 
       desc: language === 'fr' 
-        ? 'Une surprise qui raconte les souvenirs, les blagues, les épreuves et les victoires d’une personne qu’on aime.' 
+        ? 'Une chanson pleine de souvenirs pour faire sourire et émouvoir.' 
         : language === 'sw'
-        ? 'Zawadi ya kushtukiza inayosimulia kumbukumbu, utani, majaribu na ushindi wa mtu unayempenda.'
-        : 'A surprise that narrates the memories, inside jokes, struggles, and victories of someone you love.', 
-      image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=500&q=80', 
-      gradient: 'from-purple-900/40 to-black' 
+        ? 'Wimbo uliojaa kumbukumbu za kuchekesha na kugusa hisia.'
+        : 'A song packed with memories to make them smile and feel moved.'
     },
     { 
       id: 'mariage', 
       name: language === 'fr' ? 'Mariage' : language === 'sw' ? 'Arusi' : 'Wedding', 
       icon: Heart, 
       desc: language === 'fr' 
-        ? 'Une chanson d’entrée, d’ouverture de bal ou de déclaration qui porte votre histoire d’amour avec force et élégance.' 
+        ? 'Une chanson d’amour élégante pour célébrer votre histoire.' 
         : language === 'sw'
-        ? 'Wimbo wa kuingia, kufungua densi au tamko la upendo linalobeba hadithi yenu ya mapenzi kwa nguvu na uzuri.'
-        : 'An entrance song, first dance opener, or declaration that carries your love story with strength and elegance.', 
-      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=500&q=80', 
-      gradient: 'from-pink-900/40 to-black' 
+        ? 'Wimbo wa mapenzi wa kifahari kusherehekea hadithi yenu.'
+        : 'An elegant love song to celebrate your beautiful story.'
     },
     { 
       id: 'deuil', 
       name: language === 'fr' ? 'Hommage / Deuil' : language === 'sw' ? 'Kumbukumbu ya Msiba' : 'Funeral Tribute', 
       icon: Award, 
       desc: language === 'fr' 
-        ? 'Un hommage digne, tendre et profondément humain pour honorer la mémoire d’un être cher.' 
+        ? 'Un hommage sincère, tendre et profondément humain.' 
         : language === 'sw'
-        ? 'Kumbukumbu yenye heshima kubwa na ya kiubinadamu ili kuheshimu maisha ya mpendwa wako.'
-        : 'A dignified, tender, and deeply human tribute to honor the memory of a loved one.', 
-      image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=500&q=80', 
-      gradient: 'from-gray-900/60 to-black' 
+        ? 'Kumbukumbu ya dhati, ya upole na yenye kugusa hisia.'
+        : 'A sincere, tender, and deeply human memorial tribute.'
     },
     { 
       id: 'amour', 
       name: language === 'fr' ? 'Amour / Demande' : language === 'sw' ? 'Mapenzi / Kuposa' : 'Love / Proposal', 
       icon: Flame, 
       desc: language === 'fr' 
-        ? 'Une déclaration inoubliable, bien plus forte qu’un cadeau classique.' 
+        ? 'Une déclaration inoubliable, plus forte qu’un simple cadeau.' 
         : language === 'sw'
-        ? 'Tamko lisiloweza kusahaulika la upendo, lenye nguvu kubwa kuliko zawadi yoyote ya kawaida.'
-        : 'An unforgettable declaration of love, far more powerful than a conventional gift.', 
-      image: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=500&q=80', 
-      gradient: 'from-rose-950/40 to-black' 
+        ? 'Tamko lisilosahaulika, lenye nguvu zaidi kuliko zawadi ya kawaida.'
+        : 'An unforgettable declaration, more powerful than a simple gift.'
     },
+    { 
+      id: 'naissance', 
+      name: language === 'fr' ? 'Naissance' : language === 'sw' ? 'Kuzaliwa kwa Mtoto' : 'Birth / Newborn', 
+      icon: Baby, 
+      desc: language === 'fr' 
+        ? 'Un souvenir doux et précieux pour accueillir une nouvelle vie.' 
+        : language === 'sw'
+        ? 'Kumbukumbu tamu na ya thamani ya kukaribisha maisha mapya.'
+        : 'A sweet and precious keepsake to welcome a new life.'
+    },
+    { 
+      id: 'remerciement', 
+      name: language === 'fr' ? 'Remerciement' : language === 'sw' ? 'Shukrani' : 'Thank You', 
+      icon: HeartHandshake, 
+      desc: language === 'fr' 
+        ? 'Dire merci avec une chanson qui touche le cœur.' 
+        : language === 'sw'
+        ? 'Kusema asante kwa wimbo unaogusa moyo kabisa.'
+        : 'Say thank you with a custom song that touches the heart.'
+    },
+    { 
+      id: 'gospel', 
+      name: language === 'fr' ? 'Gospel / Prière' : language === 'sw' ? 'Gospel / Sala' : 'Gospel / Prayer', 
+      icon: Sun, 
+      desc: language === 'fr' 
+        ? 'Une chanson inspirée par la foi, l’espérance et la reconnaissance.' 
+        : language === 'sw'
+        ? 'Wimbo unaochochewa na imani, tumaini na shukrani.'
+        : 'A custom song inspired by faith, hope, and gratitude.'
+    }
   ];
 
   const testimonials = [
@@ -168,7 +192,7 @@ export default function Home({ packages, featuredSongs, featuredReviews, onNavig
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* Hero Left Content */}
-          <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
+          <div className="lg:col-span-7 space-y-8 text-center lg:text-left order-2 lg:order-1">
             
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-mono text-xs tracking-wider uppercase animate-pulse">
               <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
@@ -240,55 +264,59 @@ export default function Home({ packages, featuredSongs, featuredReviews, onNavig
 
           </div>
 
-          {/* Hero Right Visual Column (Emotional player card) */}
-          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end">
-            <div className="relative w-full max-w-md aspect-square rounded-3xl overflow-hidden p-[1px] bg-gradient-to-b from-purple-500/40 via-pink-500/20 to-yellow-500/30 shadow-2xl shadow-purple-950/50">
-              <div className="w-full h-full rounded-3xl bg-black overflow-hidden relative group">
-                <img
-                  src="https://images.unsplash.com/photo-1516575150278-77136aed6920?auto=format&fit=crop&w=800&q=80"
-                  alt="Une femme émue en écoutant sa chanson personnalisée VOXMORY"
-                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-all duration-700"
-                  referrerPolicy="no-referrer"
-                  loading="lazy"
-                />
-                
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
-
-                <div className="absolute top-4 left-4 bg-purple-900/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-purple-500/30 text-[10px] text-pink-300 font-mono flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                  <span>Rendu Studio Haute Définition</span>
-                </div>
-
-                {/* Floating absolute mini demo */}
-                <div className="absolute bottom-6 left-6 right-6 bg-[#09090d]/95 backdrop-blur-md p-4 rounded-2xl border border-yellow-500/15 shadow-xl">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-lg bg-yellow-400/10 flex items-center justify-center flex-shrink-0 border border-yellow-400/20">
-                      <Music className="w-5 h-5 text-yellow-400 animate-spin" />
+          {/* Hero Right Visual Column (Premium Album Layout with ZERO overlapping) */}
+          <div className="lg:col-span-5 relative flex flex-col items-center justify-center lg:justify-end w-full space-y-4 order-1 lg:order-2" id="hero-right-visual">
+            
+            {/* Elegant Album Cover with Thin Animated Border (100% clean, no overlaps) */}
+            <div className="relative w-full max-w-[340px] xs:max-w-[360px] sm:max-w-[400px] aspect-square rounded-2xl overflow-hidden p-[1.5px] animated-border-glow shadow-2xl shadow-purple-500/20">
+              <div className="w-full h-full rounded-2xl bg-[#09090c] overflow-hidden relative group">
+                {!imageError ? (
+                  <img
+                    src="/images/1783329105667-80e71f71-35ca-4c27-a1c0-4ec31ca0c188-1_all_5872.jpg"
+                    alt="Affiche du Single Trahison - VOXMORY Studio"
+                    className="w-full h-full object-cover opacity-100 group-hover:scale-[1.03] transition-all duration-700 ease-out"
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-tr from-[#0f0914] via-[#1a0f2b] to-[#0a0512] flex flex-col items-center justify-center p-6 text-center select-none relative">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(234,179,8,0.08)_0%,_transparent_60%)] pointer-events-none" />
+                    
+                    {/* Spinning Vinyl Disk */}
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center shadow-2xl border-4 border-zinc-950 relative animate-spin-slow">
+                      <div className="absolute inset-2 rounded-full border border-zinc-800/40" />
+                      <div className="absolute inset-6 rounded-full border border-zinc-800/60" />
+                      <div className="absolute inset-10 rounded-full border border-zinc-700" />
+                      {/* Gold record center */}
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-500 to-amber-300 flex items-center justify-center shadow-inner">
+                        <Music className="w-4 h-4 text-black" />
+                      </div>
                     </div>
-                    <div className="flex-grow">
-                      <span className="block text-[8px] text-gray-500 uppercase tracking-widest font-mono">
-                        {featuredSongs && featuredSongs.length > 0 ? "Chanson de la galerie" : "Démo à l'écoute"}
-                      </span>
-                      <span className="block text-xs font-bold text-white">
-                        {featuredSongs && featuredSongs.length > 0 ? `« ${featuredSongs[0].title} »` : "« Mon Héros du Quotidien »"}
-                      </span>
-                      <span className="block text-[9px] text-yellow-400">
-                        {featuredSongs && featuredSongs.length > 0 ? `${featuredSongs[0].style} • ${featuredSongs[0].occasion}` : "Rumba congolaise intense (Extrait 30s)"}
-                      </span>
+                    
+                    {/* Cover Text */}
+                    <div className="mt-6 space-y-1 z-10">
+                      <span className="block text-[10px] text-yellow-500 font-bold tracking-[0.25em] uppercase font-mono">VOXMORY STUDIO</span>
+                      <h3 className="text-lg font-extrabold text-white tracking-wide leading-tight">« TRAHISON »</h3>
+                      <p className="text-xs text-pink-400 font-medium">Single Vedette • Rumba Congolaise</p>
                     </div>
                   </div>
-                  
-                  {/* Embedded demo player */}
-                  <AudioPlayer
-                    audioUrl={featuredSongs && featuredSongs.length > 0 ? featuredSongs[0].audioUrl : "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"}
-                    title={featuredSongs && featuredSongs.length > 0 ? featuredSongs[0].title : "Mon Héros du Quotidien"}
-                    subtitle={featuredSongs && featuredSongs.length > 0 ? `${featuredSongs[0].style} • ${featuredSongs[0].occasion}` : "Extrait • Rumba"}
-                    startTime={0}
-                    endTime={30}
-                  />
-                </div>
+                )}
+                
+                {/* Visual light reflection sweep effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
               </div>
             </div>
+
+            {/* Separate, Modern Spotify-style Player Bar (Underneath the cover, zero overlapping!) */}
+            <div className="w-full max-w-[340px] xs:max-w-[360px] sm:max-w-[400px]">
+              <AudioPlayer
+                audioUrl="/audio/1783329292940-NO_LLA_kabala_.mp3"
+                title="« TRAHISON »"
+                subtitle="Single Vedette • Rumba Congolaise"
+                startTime={0}
+                endTime={45} // 45 seconds teaser for home page preview
+              />
+            </div>
+            
           </div>
 
         </div>
@@ -334,61 +362,83 @@ export default function Home({ packages, featuredSongs, featuredReviews, onNavig
       </section>
 
       {/* ------------------------------------
-          3. SECTION RECONNAISSANCE IMMÉDIATE (Cas d'usage)
+          3. SECTION RECONNAISSANCE IMMÉDIATE (Cas d'usage - Version Premium Compacte)
           ------------------------------------ */}
-      <section className="py-20 bg-[#030304]">
+      <section className="py-12 sm:py-16 bg-[#030304] border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="max-w-2xl mx-auto space-y-3 mb-12 text-center">
-            <h2 className="font-sans font-bold text-yellow-400 text-xs tracking-widest uppercase">
+          <div className="max-w-2xl mx-auto space-y-2 mb-8 text-center">
+            <h2 className="font-sans font-bold text-yellow-400 text-[10px] sm:text-xs tracking-widest uppercase">
               Pour quel moment de vie souhaitez-vous créer une chanson ?
             </h2>
-            <p className="font-sans font-extrabold text-3xl text-white">
+            <p className="font-sans font-extrabold text-2xl sm:text-3xl text-white">
               Sélectionnez votre occasion et commencez
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
             {categories.map((cat) => {
               const IconComp = cat.icon;
               return (
                 <div
                   key={cat.id}
                   onClick={() => onNavigate('order', { category: cat.name })}
-                  className="relative group rounded-2xl overflow-hidden aspect-[4/3] sm:aspect-square cursor-pointer border border-yellow-500/10 hover:border-yellow-400/40 transition-all duration-500 shadow-lg hover:scale-[1.02]"
+                  className="group flex items-center justify-between p-3.5 rounded-2xl bg-[#0c0c12] border border-white/5 hover:border-yellow-400/30 hover:bg-[#12121a] transition-all duration-300 cursor-pointer shadow-md hover:shadow-yellow-500/5 select-none"
+                  id={`cat-card-${cat.id}`}
                 >
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 opacity-80"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-                  <div className={`absolute inset-0 bg-gradient-to-tr ${cat.gradient} opacity-80 mix-blend-multiply z-10`} />
-
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end z-20 space-y-2">
-                    <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/30 flex items-center justify-center text-yellow-400 group-hover:bg-gradient-to-tr group-hover:from-purple-600 group-hover:to-pink-500 group-hover:text-white transition-all">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400/10 to-amber-500/10 border border-yellow-500/20 text-yellow-400 flex items-center justify-center flex-shrink-0 group-hover:scale-105 group-hover:from-purple-500/15 group-hover:to-pink-500/15 group-hover:text-pink-400 group-hover:border-pink-500/30 transition-all duration-300">
                       <IconComp className="w-5 h-5" />
                     </div>
-                    <div>
-                      <h3 className="font-sans font-bold text-lg text-white group-hover:text-yellow-400 transition-colors flex items-center gap-1">
-                        <span>{cat.name}</span>
-                        <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    <div className="text-left min-w-0">
+                      <h3 className="font-sans font-extrabold text-xs sm:text-sm text-white group-hover:text-yellow-400 transition-colors truncate">
+                        {cat.name}
                       </h3>
-                      <p className="text-[11px] text-gray-300 line-clamp-3 leading-relaxed mt-1">{cat.desc}</p>
+                      <p className="text-[10px] sm:text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors truncate max-w-[220px] sm:max-w-none mt-0.5">
+                        {cat.desc}
+                      </p>
                     </div>
+                  </div>
+                  <div className="flex-shrink-0 ml-2 text-gray-600 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all duration-300">
+                    <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
               );
             })}
+
+            {/* Special quick CTA block at the end of categories list to keep total count balanced and guide to conversion */}
+            <div
+              onClick={() => onNavigate('order')}
+              className="group flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-yellow-400/10 to-amber-500/10 border border-yellow-400/30 hover:border-yellow-400 hover:from-yellow-400/20 hover:to-amber-500/20 transition-all duration-300 cursor-pointer shadow-md select-none"
+              id="cat-card-custom"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-yellow-400 text-black flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-all duration-300">
+                  <Music className="w-5 h-5 fill-black/10" />
+                </div>
+                <div className="text-left min-w-0">
+                  <h3 className="font-sans font-black text-xs sm:text-sm text-yellow-400 group-hover:text-yellow-300 transition-colors truncate">
+                    Autre Événement
+                  </h3>
+                  <p className="text-[10px] sm:text-[11px] text-gray-300 group-hover:text-white transition-colors truncate mt-0.5">
+                    Créer un projet sur-mesure de A à Z.
+                  </p>
+                </div>
+              </div>
+              <div className="flex-shrink-0 ml-2 text-yellow-400 group-hover:translate-x-1 transition-all duration-300">
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+
           </div>
 
-          <div className="mt-12 text-center">
+          <div className="mt-8 text-center">
             <button
               onClick={() => onNavigate('order')}
-              className="px-8 py-4 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-sans font-bold text-xs uppercase tracking-widest hover:scale-[1.02] transition-all"
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black font-sans font-bold text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+              id="btn-categories-generic-cta"
             >
-              Je choisis mon occasion
+              Lancer ma création personnalisée
             </button>
           </div>
 
@@ -431,9 +481,16 @@ export default function Home({ packages, featuredSongs, featuredReviews, onNavig
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full bg-purple-950 text-pink-400 font-sans font-semibold text-[10px] uppercase tracking-wider">
-                      {song.occasion}
-                    </span>
+                    <div className="flex gap-1.5 items-center">
+                      <span className="px-3 py-1 rounded-full bg-purple-950 text-pink-400 font-sans font-semibold text-[10px] uppercase tracking-wider">
+                        {song.occasion}
+                      </span>
+                      {song.isFeatured && (
+                        <span className="px-2.5 py-1 rounded-full bg-yellow-400/10 text-yellow-400 font-sans font-bold text-[9px] uppercase tracking-wider flex items-center gap-1 border border-yellow-400/20">
+                          ✨ Vedette
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs text-gray-500 font-mono">{song.style}</span>
                   </div>
 
@@ -659,7 +716,7 @@ export default function Home({ packages, featuredSongs, featuredReviews, onNavig
 
           <div className="space-y-6">
             <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-2">
-              <h4 className="font-sans font-bold text-white text-base">We partons de votre vraie histoire</h4>
+              <h4 className="font-sans font-bold text-white text-base">Nous partons de votre vraie histoire</h4>
               <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
                 Pas d’émotion générique ou de phrases pré-écrites industrielles. Chaque couplet, chaque rime est lié directement aux prénoms, anecdotes et mémoires confiés par vos soins.
               </p>

@@ -16,6 +16,7 @@ export default function AudioPlayer({ audioUrl, title, subtitle, coverUrl, start
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [imageError, setImageError] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressBarRef = useRef<HTMLInputElement | null>(null);
@@ -28,13 +29,14 @@ export default function AudioPlayer({ audioUrl, title, subtitle, coverUrl, start
     setIsLoading(false);
     setCurrentTime(minTime);
     setDuration(0);
+    setImageError(false);
     
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.load();
       audioRef.current.currentTime = minTime;
     }
-  }, [audioUrl, startTime]);
+  }, [audioUrl, startTime, coverUrl]);
 
   // Check if metadata is already loaded (for cached audios)
   useEffect(() => {
@@ -173,10 +175,15 @@ export default function AudioPlayer({ audioUrl, title, subtitle, coverUrl, start
 
       {/* Cover art or placeholder */}
       <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 border border-white/5">
-        {coverUrl ? (
-          <img src={coverUrl} alt={title} className={`w-full h-full object-cover transition-all duration-700 ${isPlaying ? 'scale-110 rotate-3' : ''}`} referrerPolicy="no-referrer" />
+        {coverUrl && !imageError ? (
+          <img
+            src={coverUrl}
+            alt={title}
+            className={`w-full h-full object-cover transition-all duration-700 ${isPlaying ? 'scale-110 rotate-3' : ''}`}
+            onError={() => setImageError(true)}
+          />
         ) : (
-          <div className="w-full h-full bg-gradient-to-tr from-purple-950 to-pink-950 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-tr from-purple-950 via-zinc-950 to-pink-950 flex items-center justify-center">
             <Music className="w-8 h-8 text-yellow-500/80 animate-pulse" />
           </div>
         )}

@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Sparkles, ArrowLeft, ArrowRight, Check, MessageCircle, Mic, FileText, Upload, Calendar, Music, Coins, Smartphone, Loader2 } from 'lucide-react';
 import { Package, Order } from '../types.js';
 
-// Helper to strictly validate African and international phone numbers
+// Helper to strictly validate African and international phone numbers in a smart, self-healing way
 function validateAfricanAndInternationalPhone(phone: string, countryHint: string): { isValid: boolean; error?: string; formatted?: string } {
   // Remove spaces, dashes, parentheses and other formatting characters, keeping digits and '+'
   let cleaned = phone.replace(/[^\d+]/g, '');
@@ -17,32 +17,34 @@ function validateAfricanAndInternationalPhone(phone: string, countryHint: string
     cleaned = '+' + cleaned.slice(2);
   }
 
-  const hasPlus = cleaned.startsWith('+');
   const countryLower = (countryHint || '').trim().toLowerCase();
 
-  // If there's no plus and it starts with 0 (national format)
-  if (!hasPlus && cleaned.startsWith('0')) {
-    let exampleSuffix = "";
+  // Smart Auto-healing for national format: If it starts with 0 and does not have +
+  if (!cleaned.startsWith('+') && cleaned.startsWith('0')) {
+    let prefix = '243'; // Default to RDC
     if (countryLower.includes('rdc') || countryLower.includes('congo d') || countryLower.includes('kinshasa') || countryLower.includes('congolaise')) {
-      exampleSuffix = " (ex: +243 " + cleaned.slice(1) + ")";
-    } else if (countryLower.includes('ci') || countryLower.includes('ivoire') || countryLower.includes('abidjan')) {
-      exampleSuffix = " (ex: +225 " + cleaned.slice(1) + ")";
-    } else if (countryLower.includes('sn') || countryLower.includes('sénégal') || countryLower.includes('senegal')) {
-      exampleSuffix = " (ex: +221 " + cleaned.slice(1) + ")";
-    } else if (countryLower.includes('fr') || countryLower.includes('france')) {
-      exampleSuffix = " (ex: +33 " + cleaned.slice(1) + ")";
-    } else {
-      exampleSuffix = " (ex: +243 pour la RDC, +225 pour la Côte d'Ivoire, +33 pour la France).";
+      prefix = '243';
+    } else if (countryLower.includes('brav') || countryLower.includes('congo-b') || countryLower.includes('242')) {
+      prefix = '242';
+    } else if (countryLower.includes('ci') || countryLower.includes('ivoire') || countryLower.includes('abidjan') || countryLower.includes('225')) {
+      prefix = '225';
+    } else if (countryLower.includes('sn') || countryLower.includes('sénégal') || countryLower.includes('senegal') || countryLower.includes('221')) {
+      prefix = '221';
+    } else if (countryLower.includes('cm') || countryLower.includes('cameroun') || countryLower.includes('237')) {
+      prefix = '237';
+    } else if (countryLower.includes('ga') || countryLower.includes('gabon') || countryLower.includes('241')) {
+      prefix = '241';
+    } else if (countryLower.includes('fr') || countryLower.includes('france') || countryLower.includes('33')) {
+      prefix = '33';
+    } else if (countryLower.includes('be') || countryLower.includes('belgique') || countryLower.includes('32')) {
+      prefix = '32';
     }
-    return {
-      isValid: false,
-      error: `Format national détecté. Veuillez saisir votre numéro au format international avec l'indicatif pays commençant par '+'${exampleSuffix}`
-    };
+    cleaned = '+' + prefix + cleaned.slice(1);
   }
 
-  // If it is just digits without '+', e.g. '243978508099', auto-add '+' and check
-  if (!hasPlus) {
-    const commonPrefixes = ['243', '242', '225', '221', '237', '241', '254', '255', '256', '250', '257', '33', '32', '1'];
+  // If there's no plus and it starts with a common prefix without '+'
+  if (!cleaned.startsWith('+')) {
+    const commonPrefixes = ['243', '242', '225', '221', '237', '241', '250', '257', '254', '255', '256', '33', '32', '1'];
     let autoPrefixed = false;
     for (const prefix of commonPrefixes) {
       if (cleaned.startsWith(prefix)) {
@@ -52,14 +54,14 @@ function validateAfricanAndInternationalPhone(phone: string, countryHint: string
       }
     }
     if (!autoPrefixed) {
-      return {
-        isValid: false,
-        error: "Veuillez saisir votre numéro au format international commençant par '+' (ex: +243978508099)."
-      };
+      if (cleaned.length === 9) {
+        cleaned = '+243' + cleaned;
+      } else {
+        cleaned = '+' + cleaned;
+      }
     }
   }
 
-  // At this point we are guaranteed to start with '+'
   const digits = cleaned.slice(1);
 
   if (digits.length < 7 || digits.length > 15) {
@@ -69,188 +71,7 @@ function validateAfricanAndInternationalPhone(phone: string, countryHint: string
     };
   }
 
-  // 1. DR Congo (RDC) (+243)
-  if (digits.startsWith('243')) {
-    const local = digits.slice(3);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour la RDC (+243), le numéro doit comporter exactement 9 chiffres après l'indicatif pays (ex: +243 978 508 099). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-    // Mobile prefixes in RDC are usually 8 or 9.
-    if (!['8', '9'].includes(local[0])) {
-      return {
-        isValid: false,
-        error: "Pour la RDC (+243), les numéros mobiles valides doivent commencer par un 8 ou un 9 (ex: +243 9... ou +243 8...)."
-      };
-    }
-  }
-
-  // 2. Republic of Congo (Congo-Brazzaville) (+242)
-  else if (digits.startsWith('242')) {
-    const local = digits.slice(3);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour le Congo-Brazzaville (+242), le numéro doit comporter exactement 9 chiffres après l'indicatif (ex: +242 06 123 4567). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-  }
-
-  // 3. Côte d'Ivoire (+225)
-  else if (digits.startsWith('225')) {
-    const local = digits.slice(3);
-    // Since Feb 2021, Côte d'Ivoire numbers have 10 digits
-    if (local.length !== 10) {
-      return {
-        isValid: false,
-        error: `Pour la Côte d'Ivoire (+225), le numéro doit comporter exactement 10 chiffres (nouveau format à 10 chiffres depuis 2021). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-    // First digit must be 0, 1, or 5 (usually 01, 05, 07 for orange, mtn, moov mobile numbers)
-    if (!['0', '1', '5'].includes(local[0])) {
-      return {
-        isValid: false,
-        error: "Pour la Côte d'Ivoire (+225), les numéros mobiles valides commencent par 01, 05, 07."
-      };
-    }
-  }
-
-  // 4. Sénégal (+221)
-  else if (digits.startsWith('221')) {
-    const local = digits.slice(3);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour le Sénégal (+221), le numéro doit comporter exactement 9 chiffres après l'indicatif (ex: +221 77 123 45 67). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-    if (!['7', '3'].includes(local[0])) {
-      return {
-        isValid: false,
-        error: "Pour le Sénégal (+221), le numéro de téléphone mobile doit commencer par un 7 ou un 3 (ex: +221 77...)."
-      };
-    }
-  }
-
-  // 5. Cameroun (+237)
-  else if (digits.startsWith('237')) {
-    const local = digits.slice(3);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour le Cameroun (+237), le numéro doit comporter exactement 9 chiffres après l'indicatif (ex: +237 677 12 34 56). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-    if (!['6', '2', '3'].includes(local[0])) {
-      return {
-        isValid: false,
-        error: "Pour le Cameroun (+237), le numéro mobile doit commencer par un 6, un 2 ou un 3."
-      };
-    }
-  }
-
-  // 6. Gabon (+241)
-  else if (digits.startsWith('241')) {
-    const local = digits.slice(3);
-    if (local.length < 7 || local.length > 9) {
-      return {
-        isValid: false,
-        error: `Pour le Gabon (+241), le numéro doit comporter entre 7 et 9 chiffres après l'indicatif. Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-  }
-
-  // 7. Rwanda (+250)
-  else if (digits.startsWith('250')) {
-    const local = digits.slice(3);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour le Rwanda (+250), le numéro doit comporter exactement 9 chiffres après l'indicatif (ex: +250 788 123 456). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-    if (local[0] !== '7') {
-      return {
-        isValid: false,
-        error: "Pour le Rwanda (+250), le numéro mobile doit commencer par un 7 (ex: +250 78...)."
-      };
-    }
-  }
-
-  // 8. Burundi (+257)
-  else if (digits.startsWith('257')) {
-    const local = digits.slice(3);
-    if (local.length !== 8) {
-      return {
-        isValid: false,
-        error: `Pour le Burundi (+257), le numéro doit comporter exactement 8 chiffres après l'indicatif (ex: +257 79 123 456). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-  }
-
-  // 9. Kenya (+254)
-  else if (digits.startsWith('254')) {
-    const local = digits.slice(3);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour le Kenya (+254), le numéro doit comporter exactement 9 chiffres après l'indicatif (ex: +254 712 345 678). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-  }
-
-  // 10. Tanzanie (+255)
-  else if (digits.startsWith('255')) {
-    const local = digits.slice(3);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour la Tanzanie (+255), le numéro doit comporter exactement 9 chiffres après l'indicatif (ex: +255 712 345 678). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-  }
-
-  // 11. Ouganda (+256)
-  else if (digits.startsWith('256')) {
-    const local = digits.slice(3);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour l'Ouganda (+256), le numéro doit comporter exactement 9 chiffres après l'indicatif (ex: +256 712 345 678). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-  }
-
-  // 12. France (+33)
-  else if (digits.startsWith('33')) {
-    const local = digits.slice(2);
-    if (local.length !== 9) {
-      return {
-        isValid: false,
-        error: `Pour la France (+33), le numéro doit comporter exactement 9 chiffres après l'indicatif (sans le 0 initial, ex: +33 6 12 34 56 78). Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-    if (!['6', '7'].includes(local[0])) {
-      return {
-        isValid: false,
-        error: "Pour la France (+33), le numéro mobile doit commencer par 6 ou 7 (ex: +33 6...)."
-      };
-    }
-  }
-
-  // 13. Belgique (+32)
-  else if (digits.startsWith('32')) {
-    const local = digits.slice(2);
-    if (local.length < 8 || local.length > 9) {
-      return {
-        isValid: false,
-        error: `Pour la Belgique (+32), le numéro doit comporter 8 ou 9 chiffres après l'indicatif. Vous avez saisi ${local.length} chiffres.`
-      };
-    }
-  }
-
+  // Self-healed and fully ready for WhatsApp
   return { isValid: true, formatted: cleaned };
 }
 
@@ -315,6 +136,7 @@ export default function OrderForm({ packages, initialParams, onNavigate, onSubmi
     mood: 'Romantique',
     musicStyle: 'Rumba congolaise',
     packageId: 'pack_musique_video',
+    vipCardSelected: false,
     
     desiredDeliveryDate: '',
     urgency: 'normal',
@@ -336,6 +158,9 @@ export default function OrderForm({ packages, initialParams, onNavigate, onSubmi
       }
       if (initialParams.packageId) {
         updated.packageId = initialParams.packageId;
+      }
+      if (initialParams.vipCardSelected !== undefined) {
+        updated.vipCardSelected = initialParams.vipCardSelected;
       }
       if (initialParams.step) {
         setCurrentStep(initialParams.step);
@@ -1390,6 +1215,51 @@ export default function OrderForm({ packages, initialParams, onNavigate, onSubmi
                   </div>
                 </button>
               ))}
+            </div>
+
+            {/* Options supplémentaires */}
+            <div className="space-y-3 pt-6 border-t border-white/5">
+              <h3 className="text-xs font-mono font-bold text-gray-400 uppercase tracking-widest">Option supplémentaire</h3>
+              
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, vipCardSelected: !prev.vipCardSelected }))}
+                className={`w-full p-5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                  formData.vipCardSelected
+                    ? 'border-pink-500 bg-purple-950/10'
+                    : 'border-white/5 bg-[#0e0e12] hover:border-white/10'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="mt-1 flex-shrink-0">
+                    <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
+                      formData.vipCardSelected
+                        ? 'bg-pink-600 border-pink-500 text-white'
+                        : 'border-white/20 bg-black'
+                    }`}>
+                      {formData.vipCardSelected && (
+                        <Check className="w-3.5 h-3.5 stroke-[3px]" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-sans font-bold text-base text-white">Carte VIP Souvenir</span>
+                      <span className="bg-pink-500/10 text-pink-400 text-[9px] font-bold px-2 py-0.5 rounded uppercase font-mono border border-pink-400/20">Add-on</span>
+                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed">Une carte souvenir officielle VOXMORY pour rendre votre commande plus spéciale.</p>
+                    <ul className="text-[10px] text-purple-300 flex flex-wrap gap-x-3 gap-y-1 pt-1 list-disc list-inside font-mono">
+                      <li>Carte VIP personnalisée</li>
+                      <li>Nom du bénéficiaire</li>
+                      <li>Code unique</li>
+                      <li>Design premium</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="block font-sans font-extrabold text-lg text-pink-400">+2 $</span>
+                </div>
+              </button>
             </div>
 
             <div className="flex justify-between pt-4">

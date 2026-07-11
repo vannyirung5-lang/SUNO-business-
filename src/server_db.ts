@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
-import { Package, Order, GallerySong, ClientReview, MemoryPage, EventReminder, BroadcastList, BroadcastCampaign, DailyStat } from './types.js';
+import { Package, Order, GallerySong, ClientReview, MemoryPage, EventReminder, BroadcastList, BroadcastCampaign, DailyStat, PromotionSettings } from './types.js';
 
 // Define the overall database schema shape
 interface DatabaseSchema {
@@ -18,6 +18,7 @@ interface DatabaseSchema {
   dailyStats: DailyStat[];
   broadcastLists: BroadcastList[];
   broadcastCampaigns: BroadcastCampaign[];
+  promotion: PromotionSettings;
 }
 
 // ----------------------------------------------------
@@ -27,13 +28,12 @@ const initialPackages: Package[] = [
   {
     id: 'pack_simple',
     name: 'Chanson Simple',
-    promise: 'Une magnifique chanson simple, sur mesure, écrite et chantée pour vous.',
+    promise: 'Un message court transformé en chanson touchante.',
     includes: [
-      'Chanson personnalisée sur mesure (1-2 minutes)',
-      'Format audio MP3 haute qualité',
-      'Paroles poétiques et soignées incluses',
-      '1 cycle de révision des paroles',
-      'Idéal pour : Déclarations d\'amour, Clins d\'œil simples'
+      'Chanson personnalisée courte',
+      'Durée : 1 à 2 minutes',
+      'Format MP3',
+      '1 révision des paroles'
     ],
     price: '20 $',
     deliveryTime: '5 jours'
@@ -41,30 +41,28 @@ const initialPackages: Package[] = [
   {
     id: 'pack_musique_video',
     name: 'Musique + Vidéo',
-    promise: 'Une œuvre musicale complète accompagnée de votre montage vidéo personnalisé.',
+    promise: 'Votre histoire transformée en chanson complète avec vidéo souvenir.',
     includes: [
-      'Chanson personnalisée complète (2-3 minutes)',
-      'Montage Vidéo personnalisé (Diaporama photos ou Vidéo lyrics)',
-      'Formats audio WAV et MP3 de qualité studio',
-      'Paroles poétiques rédigées avec soin',
-      '2 cycles de révisions des paroles',
-      'Page Souvenir Privée interactive avec QR code'
+      'Chanson personnalisée complète',
+      'Montage vidéo avec vos photos',
+      'Format MP3 + WAV',
+      'Couverture personnalisée',
+      'Page souvenir privée avec QR code'
     ],
     price: '50 $',
     deliveryTime: '3 jours'
   },
   {
     id: 'pack_premium_vip',
-    name: 'PREMIUM VIP',
-    promise: 'L\'expérience ultime : Chanson, Carte VIP physique exclusive et abonnement d\'un an.',
+    name: 'Premium VIP',
+    promise: 'L’expérience VOXMORY complète pour créer un souvenir haut de gamme.',
     includes: [
-      'Chanson premium longue de qualité supérieure (3-4 minutes)',
-      'Carte VIP physique exclusive (Livrée ou expédiée)',
-      'ABONNEMENT D\'UN AN : Chaque mois, vous avez droit à une chanson selon l\'événement !',
-      'Montage vidéo de prestige avec vos photos',
-      'Révisions de paroles illimitées avant production',
-      'Page Souvenir premium personnalisée à vie',
-      'Assistance WhatsApp VIP dédiée 24h/24'
+      'Chanson premium longue',
+      'Montage vidéo prestige',
+      'Couverture premium',
+      'Page souvenir privée à vie',
+      'Révisions prioritaires avant production',
+      'Assistance WhatsApp VIP'
     ],
     price: '100 $',
     deliveryTime: '24 heures'
@@ -72,16 +70,16 @@ const initialPackages: Package[] = [
   {
     id: 'pack_presentiel',
     name: 'Prestation Présentielle',
-    promise: 'Nos artistes ou notre équipe se déplacent en personne lors de votre événement.',
+    promise: 'VOXMORY se déplace pour transformer votre événement en moment inoubliable.',
     includes: [
-      'Prestation en live de l\'artiste pour chanter votre œuvre devant vos invités',
-      'Présence physique de l\'équipe Voxmory à votre événement',
-      'Chanson personnalisée de qualité studio incluse',
-      'Carte VIP physique collector + Certificat d\'authenticité',
-      'Enregistrement vidéo de la prestation live inclus',
-      'Idéal pour : Grands mariages, Collations prestige, Soirées de gala'
+      'Prestation live devant vos invités',
+      'Présence de l’équipe VOXMORY',
+      'Chanson personnalisée qualité studio',
+      'Vidéo souvenir de la prestation',
+      'Carte VIP + certificat souvenir',
+      'Organisation sur réservation'
     ],
-    price: '1000 $',
+    price: 'À partir de 1000 $',
     deliveryTime: 'Sur réservation'
   }
 ];
@@ -334,6 +332,13 @@ const cache: DatabaseSchema = {
   dailyStats: [...initialDailyStats],
   broadcastLists: [...initialBroadcastLists],
   broadcastCampaigns: [...initialBroadcastCampaigns],
+  promotion: localDbData?.promotion ? { ...localDbData.promotion } : {
+    text: "🔥 OFFRE SPÉCIALE : -15% sur toutes les rumbas avec le code VOX15 !",
+    isActive: true,
+    bannerStyle: 'marquee',
+    linkText: "En savoir plus",
+    linkUrl: "#tarifs"
+  },
 };
 
 let isFullySynchronized = false;
@@ -351,8 +356,28 @@ async function syncDatabase() {
       for (const p of initialPackages) {
         await setDoc(doc(db, 'packages', p.id), p);
       }
+      cache.packages = [...initialPackages];
     } else {
-      cache.packages = packagesSnap.docs.map(doc => doc.data() as Package);
+      const cloudPkgs = packagesSnap.docs.map(doc => doc.data() as Package);
+      let needsUpdate = cloudPkgs.length !== initialPackages.length;
+      if (!needsUpdate) {
+        for (const p of initialPackages) {
+          const cp = cloudPkgs.find(x => x.id === p.id);
+          if (!cp || cp.promise !== p.promise || cp.price !== p.price || cp.includes.length !== p.includes.length || cp.name !== p.name) {
+            needsUpdate = true;
+            break;
+          }
+        }
+      }
+      if (needsUpdate) {
+        console.log('[Firestore] Updates detected in initialPackages, migrating cloud documents...');
+        for (const p of initialPackages) {
+          await setDoc(doc(db, 'packages', p.id), p);
+        }
+        cache.packages = [...initialPackages];
+      } else {
+        cache.packages = cloudPkgs;
+      }
     }
 
     // 2. Sync orders
@@ -457,6 +482,23 @@ async function syncDatabase() {
       cache.adminPasswordHash = metaData?.adminPasswordHash || 'voxmory2026';
       cache.visitsCount = metaData?.visitsCount || 1345;
       cache.listensCount = metaData?.listensCount || 580;
+    }
+
+    // 11. Sync promotion settings
+    const promoDoc = await getDoc(doc(db, 'meta', 'promotion'));
+    if (!promoDoc.exists()) {
+      console.log('[Firestore] Seeding default promotion settings to cloud...');
+      const initPromo: PromotionSettings = {
+        text: "🔥 OFFRE SPÉCIALE : -15% sur toutes les rumbas avec le code VOX15 !",
+        isActive: true,
+        bannerStyle: 'marquee',
+        linkText: "En savoir plus",
+        linkUrl: "#tarifs"
+      };
+      await setDoc(doc(db, 'meta', 'promotion'), initPromo);
+      cache.promotion = initPromo;
+    } else {
+      cache.promotion = promoDoc.data() as PromotionSettings;
     }
 
     isFullySynchronized = true;
@@ -699,5 +741,13 @@ export const serverDb = {
     const item = cache.broadcastCampaigns.find(c => c.id === id);
     if (item) persistSet('broadcastCampaigns', id, item);
     return item;
+  },
+
+  // Promotion Settings
+  getPromotion: () => cache.promotion,
+  updatePromotion: (updated: Partial<PromotionSettings>) => {
+    cache.promotion = { ...cache.promotion, ...updated };
+    persistSet('meta', 'promotion', cache.promotion);
+    return cache.promotion;
   }
 };

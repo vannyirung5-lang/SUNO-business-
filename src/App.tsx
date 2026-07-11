@@ -13,8 +13,9 @@ import MemoryPageComp from './pages/MemoryPage.js';
 import Tracking from './pages/Tracking.js';
 import Admin from './pages/Admin.js';
 import InstallGuide from './pages/InstallGuide.js';
+import PromotionBanner from './components/PromotionBanner.js';
 
-import { Package, GallerySong, ClientReview } from './types.js';
+import { Package, GallerySong, ClientReview, PromotionSettings } from './types.js';
 
 // Extend Window interface for Google Analytics tracking
 declare global {
@@ -33,6 +34,7 @@ export default function App() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [gallerySongs, setGallerySongs] = useState<GallerySong[]>([]);
   const [featuredReviews, setFeaturedReviews] = useState<ClientReview[]>([]);
+  const [promotion, setPromotion] = useState<PromotionSettings | null>(null);
 
   // Dynamically initialize Google Analytics from environment variables
   useEffect(() => {
@@ -98,34 +100,39 @@ export default function App() {
     fetch('/api/stats/visit', { method: 'POST' }).catch(() => {});
   }, [currentPage]);
 
+  const loadInitialData = async () => {
+    try {
+      const [pkgsRes, galleryRes, reviewsRes, promoRes] = await Promise.all([
+        fetch('/api/packages'),
+        fetch('/api/gallery'),
+        fetch('/api/reviews'),
+        fetch('/api/promotion')
+      ]);
+
+      if (pkgsRes.ok) {
+        const pkgs = await pkgsRes.json();
+        setPackages(pkgs);
+      }
+      if (galleryRes.ok) {
+        const songs = await galleryRes.json();
+        setGallerySongs(songs);
+      }
+      if (reviewsRes.ok) {
+        const revs = await reviewsRes.json();
+        // Select only a few featured reviews
+        setFeaturedReviews(revs.filter((r: any) => r.approved === true).slice(0, 3));
+      }
+      if (promoRes.ok) {
+        const promo = await promoRes.json();
+        setPromotion(promo);
+      }
+    } catch (err) {
+      console.error('Error loading initial data in App.tsx', err);
+    }
+  };
+
   // Fetch initial collections
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        const [pkgsRes, galleryRes, reviewsRes] = await Promise.all([
-          fetch('/api/packages'),
-          fetch('/api/gallery'),
-          fetch('/api/reviews')
-        ]);
-
-        if (pkgsRes.ok) {
-          const pkgs = await pkgsRes.json();
-          setPackages(pkgs);
-        }
-        if (galleryRes.ok) {
-          const songs = await galleryRes.json();
-          setGallerySongs(songs);
-        }
-        if (reviewsRes.ok) {
-          const revs = await reviewsRes.json();
-          // Select only a few featured reviews
-          setFeaturedReviews(revs.filter((r: any) => r.approved === true).slice(0, 3));
-        }
-      } catch (err) {
-        console.error('Error loading initial data in App.tsx', err);
-      }
-    };
-
     loadInitialData();
   }, []);
 
@@ -140,9 +147,17 @@ export default function App() {
     }
   };
 
+  const getFeaturedSongs = () => {
+    const featured = gallerySongs.filter(s => s.isFeatured);
+    return featured.length > 0 ? featured : gallerySongs.slice(0, 3);
+  };
+
   return (
     <div className="min-h-screen bg-[#030304] text-white flex flex-col justify-between selection:bg-yellow-400 selection:text-black">
       
+      {/* Promotion Announcement / Ticker Banner */}
+      <PromotionBanner promotion={promotion} onNavigate={handleNavigate} />
+
       {/* Dynamic Header Navbar */}
       <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
 
@@ -151,7 +166,7 @@ export default function App() {
         {currentPage === 'home' && (
           <Home
             packages={packages}
-            featuredSongs={gallerySongs.slice(0, 3)}
+            featuredSongs={getFeaturedSongs()}
             featuredReviews={featuredReviews}
             onNavigate={handleNavigate}
           />
@@ -204,6 +219,8 @@ export default function App() {
         {currentPage === 'admin' && (
           <Admin
             onNavigate={handleNavigate}
+            onPromotionChanged={loadInitialData}
+            onGalleryChanged={loadInitialData}
           />
         )}
 

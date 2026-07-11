@@ -270,12 +270,16 @@ app.post('/api/orders', async (req, res) => {
   const adminPhone = process.env.ADMIN_WHATSAPP_NUMBER || '243978508099';
   
   // Get package name
-  const packageName = 
+  let packageName = 
     newOrder.packageId === 'pack_simple' ? 'Chanson Simple' :
     newOrder.packageId === 'pack_musique_video' ? 'Musique + Vidéo' :
-    newOrder.packageId === 'pack_premium_vip' ? 'PREMIUM VIP' :
+    newOrder.packageId === 'pack_premium_vip' ? 'Premium VIP' :
     newOrder.packageId === 'pack_presentiel' ? 'Prestation Présentielle' :
     newOrder.packageId || 'Service sur mesure';
+
+  if (newOrder.vipCardSelected) {
+    packageName += ' + Option Carte VIP Souvenir (+2 $)';
+  }
 
   const detailsText = `Occasion: ${newOrder.occasion || 'Non spécifiée'}\nStyle: ${newOrder.musicStyle || 'Non spécifié'}\nAmbiance: ${newOrder.mood || 'Non spécifiée'}\nDestinataire: ${newOrder.recipientName || 'Non spécifié'} (${newOrder.recipientRelationship || ''})`;
 
@@ -417,6 +421,19 @@ app.delete('/api/gallery/:id', (req, res) => {
   const { id } = req.params;
   const success = serverDb.deleteGallerySong(id);
   res.json({ success });
+});
+
+// Get promotion settings
+app.get('/api/promotion', async (req, res) => {
+  await serverDb.ensureSynced();
+  res.json(serverDb.getPromotion());
+});
+
+// Update promotion settings (Admin)
+app.put('/api/promotion', async (req, res) => {
+  await serverDb.ensureSynced();
+  const updated = serverDb.updatePromotion(req.body);
+  res.json(updated);
 });
 
 // Get all reviews (approved for public, all for admin)

@@ -61,6 +61,7 @@ export interface Order {
   mood: string;
   musicStyle: string;
   packageId: string;
+  vipCardSelected?: boolean;
   
   // Delivery
   desiredDeliveryDate: string;
@@ -95,6 +96,15 @@ export interface GallerySong {
   startTime?: number; // start trimming in seconds
   endTime?: number;   // end trimming in seconds
   memorySlug?: string; // custom/private memory page slug
+  isFeatured?: boolean; // highlight song as a "Chanson vedette"
+}
+
+export interface PromotionSettings {
+  text: string;
+  isActive: boolean;
+  bannerStyle: 'marquee' | 'pulse' | 'gold-gradient' | 'classic';
+  linkText?: string;
+  linkUrl?: string;
 }
 
 export interface ClientReview {

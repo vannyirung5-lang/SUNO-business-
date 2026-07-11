@@ -530,9 +530,16 @@ export default function Gallery({ initialSongs, onNavigate }: GalleryProps) {
                   
                   {/* Card top */}
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-1 rounded-full bg-purple-950 text-pink-400 font-sans font-semibold text-[10px] uppercase tracking-wider">
-                      {song.occasion}
-                    </span>
+                    <div className="flex gap-1.5 items-center">
+                      <span className="px-2.5 py-1 rounded-full bg-purple-950 text-pink-400 font-sans font-semibold text-[10px] uppercase tracking-wider">
+                        {song.occasion}
+                      </span>
+                      {song.isFeatured && (
+                        <span className="px-2.5 py-1 rounded-full bg-yellow-400/10 text-yellow-400 font-sans font-bold text-[9px] uppercase tracking-wider flex items-center gap-1 border border-yellow-400/20">
+                          ✨ Vedette
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[11px] text-gray-500 font-mono pr-8 group-hover:pr-12 transition-all">{song.style}</span>
                   </div>
 
